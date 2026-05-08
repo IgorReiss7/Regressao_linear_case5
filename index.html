@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>🍽️ Previsão de Tempo de Preparo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0d0d0f;
+            --surface: #16161a;
+            --surface2: #1e1e24;
+            --border: #2a2a32;
+            --accent: #7c6aff;
+            --accent2: #ff6a9e;
+            --accent-glow: rgba(124, 106, 255, 0.25);
+            --text: #f0f0f5;
+            --muted: #7a7a8c;
+            --success: #3ddc84;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            gap: 28px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -200px; left: -200px;
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(124,106,255,0.12) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: -200px; right: -200px;
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(255,106,158,0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .header {
+            text-align: center;
+            animation: slideDown 0.6s ease;
+        }
+        .header-tag {
+            display: inline-block;
+            font-family: 'Syne', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-bottom: 12px;
+        }
+        .header h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--text);
+            letter-spacing: -0.5px;
+        }
+        .header h1 span { color: var(--accent); }
+        .header p { color: var(--muted); font-size: 0.9rem; margin-top: 6px; }
+
+        .cards-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+            max-width: 780px;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 28px 24px;
+            width: 340px;
+            animation: fadeUp 0.7s ease both;
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent), var(--accent2));
+            border-radius: 20px 20px 0 0;
+        }
+        .card:nth-child(2) { animation-delay: 0.1s; }
+
+        .card-icon {
+            width: 48px; height: 48px;
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px;
+            margin-bottom: 14px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+        }
+        .card:first-child .card-icon { background: rgba(124,106,255,0.12); border-color: rgba(124,106,255,0.3); }
+        .card:last-child  .card-icon { background: rgba(255,106,158,0.10); border-color: rgba(255,106,158,0.3); }
+
+        .card h2 {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.05rem; font-weight: 700;
+            color: var(--text); margin-bottom: 4px;
+        }
+        .card p { font-size: 0.8rem; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+
+        #statusModelo { font-size: 12px; margin-bottom: 14px; }
+        .status-ok  { color: var(--success); }
+        .status-err { color: var(--accent2); }
+
+        .field { margin-bottom: 10px; }
+        .field label {
+            display: block;
+            font-size: 11px; font-weight: 500;
+            color: var(--muted);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        input[type=number], select {
+            width: 100%;
+            padding: 10px 13px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            appearance: none;
+        }
+        input[type=number]:focus, select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+        select option { background: var(--surface2); }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Syne', sans-serif;
+            font-size: 14px; font-weight: 700;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            margin-top: 6px;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        button:active { transform: scale(0.98); }
+
+        .btn-manual {
+            background: linear-gradient(135deg, var(--accent), #9b8aff);
+            color: white;
+            box-shadow: 0 4px 20px rgba(124,106,255,0.35);
+        }
+        .btn-manual:hover { box-shadow: 0 6px 28px rgba(124,106,255,0.5); }
+
+        .btn-lstsq {
+            background: linear-gradient(135deg, var(--accent2), #ff8fb8);
+            color: white;
+            box-shadow: 0 4px 20px rgba(255,106,158,0.35);
+        }
+        .btn-lstsq:hover { box-shadow: 0 6px 28px rgba(255,106,158,0.5); }
+
+        .result-box {
+            margin-top: 14px;
+            padding: 14px;
+            border-radius: 12px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Syne', sans-serif;
+            font-size: 1rem; font-weight: 700;
+            color: var(--text);
+            transition: all 0.3s;
+        }
+        .result-box.has-result {
+            border-color: var(--accent);
+            background: rgba(124,106,255,0.08);
+            color: var(--accent);
+        }
+        .result-box.has-result-pink {
+            border-color: var(--accent2);
+            background: rgba(255,106,158,0.08);
+            color: var(--accent2);
+        }
+        .result-box .placeholder { color: var(--muted); font-size: 0.8rem; font-family: 'DM Sans', sans-serif; font-weight: 400; }
+
+        .residual-box {
+            margin-top: 10px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: rgba(61,220,132,0.07);
+            border: 1px solid rgba(61,220,132,0.2);
+            font-size: 12px;
+            color: var(--success);
+            font-family: 'DM Sans', sans-serif;
+            text-align: center;
+            display: none;
+        }
+
+        .method-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 10px; font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 3px 9px;
+            border-radius: 20px;
+            margin-bottom: 16px;
+        }
+        .badge-manual { background: rgba(124,106,255,0.15); color: var(--accent); border: 1px solid rgba(124,106,255,0.3); }
+        .badge-lstsq  { background: rgba(255,106,158,0.12); color: var(--accent2); border: 1px solid rgba(255,106,158,0.3); }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="header-tag">🍽️ Restaurante · Regressão Linear Múltipla</div>
+        <h1>Previsão de <span>Tempo de Preparo</span></h1>
+        <p>Insira os dados do pedido e compare os dois métodos</p>
+    </div>
+
+    <div class="cards-row">
+
+        <!-- CARD 1 — MANUAL -->
+        <div class="card">
+            <div class="card-icon">🧮</div>
+            <div class="method-badge badge-manual">▸ β = (XᵀX)⁻¹ Xᵀy — Manual</div>
+            <h2>Regressão Múltipla Manual</h2>
+            <p>Coeficientes calculados manualmente via fórmula matricial</p>
+            <div id="statusModelo"></div>
+
+            <div class="field">
+                <label>Quantidade de itens</label>
+                <input type="number" min="1" max="30" id="itens" placeholder="ex: 5" value="1">
+            </div>
+            <div class="field">
+                <label>Tipo do pedido</label>
+                <select id="tipo">
+                    <option value="" disabled selected>Selecione...</option>
+                    <option value="1">Simples</option>
+                    <option value="2">Médio</option>
+                    <option value="3">Complexo</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Nº de cozinheiros</label>
+                <input type="number" min="1" max="8" id="cozinheiros" placeholder="ex: 2" value="2">
+            </div>
+            <div class="field">
+                <label>Horário</label>
+                <select id="horario">
+                    <option value="" disabled selected>Selecione...</option>
+                    <option value="1">Vazio</option>
+                    <option value="2">Normal</option>
+                    <option value="3">Pico</option>
+                </select>
+            </div>
+
+            <button class="btn-manual" onclick="calcular()">Calcular tempo estimado</button>
+            <div class="result-box" id="resultado"><span class="placeholder">Aguardando dados...</span></div>
+        </div>
+
+        <!-- CARD 2 — LSTSQ -->
+        <div class="card">
+            <div class="card-icon">📦</div>
+            <div class="method-badge badge-lstsq">▸ np.linalg.lstsq</div>
+            <h2>Comparação com Biblioteca</h2>
+            <p>Digite os mesmos valores e veja se o resultado bate com o manual</p>
+
+            <div class="field">
+                <label>Quantidade de itens</label>
+                <input type="number" min="1" max="30" id="c_itens" placeholder="ex: 5">
+            </div>
+            <div class="field">
+                <label>Tipo do pedido</label>
+                <select id="c_tipo">
+                    <option value="" disabled selected>Selecione...</option>
+                    <option value="1">Simples</option>
+                    <option value="2">Médio</option>
+                    <option value="3">Complexo</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Nº de cozinheiros</label>
+                <input type="number" min="1" max="8" id="c_cozinheiros" placeholder="ex: 2">
+            </div>
+            <div class="field">
+                <label>Horário</label>
+                <select id="c_horario">
+                    <option value="" disabled selected>Selecione...</option>
+                    <option value="1">Vazio</option>
+                    <option value="2">Normal</option>
+                    <option value="3">Pico</option>
+                </select>
+            </div>
+
+            <button class="btn-lstsq" onclick="calcularLstsq()">Calcular com lstsq</button>
+            <div class="result-box" id="resultadoLstsq"><span class="placeholder">Aguardando dados...</span></div>
+            <div class="residual-box" id="residualBox"></div>
+        </div>
+
+    </div>
+
+    <script>
+        let modelo = null;
+
+        async function carregarModelo() {
+            try {
+                const resposta = await fetch("/modelo");
+                modelo = await resposta.json();
+                document.getElementById("statusModelo").innerHTML =
+                    '<span class="status-ok">✅ Modelo carregado</span>';
+            } catch (e) {
+                document.getElementById("statusModelo").innerHTML =
+                    '<span class="status-err">❌ Erro ao carregar modelo</span>';
+            }
+        }
+
+        function calcular() {
+            const box = document.getElementById("resultado");
+            if (!modelo) { box.innerHTML = '<span class="placeholder">⏳ Aguarde...</span>'; return; }
+
+            const itens       = parseFloat(document.getElementById("itens").value);
+            const tipo        = parseFloat(document.getElementById("tipo").value);
+            const cozinheiros = parseFloat(document.getElementById("cozinheiros").value);
+            const horario     = parseFloat(document.getElementById("horario").value);
+
+            if ([itens, tipo, cozinheiros, horario].some(isNaN)) {
+                box.innerHTML = '<span class="placeholder">⚠️ Preencha todos os campos</span>';
+                return;
+            }
+
+            const tempo =
+                modelo.multipla_manual_B0 +
+                modelo.multipla_manual_B1_itens       * itens +
+                modelo.multipla_manual_B2_tipo        * tipo +
+                modelo.multipla_manual_B3_cozinheiros * cozinheiros +
+                modelo.multipla_manual_B4_horario     * horario;
+
+            box.className = "result-box has-result";
+            box.innerText = "⏱️ " + tempo.toFixed(2) + " minutos";
+        }
+
+        function calcularLstsq() {
+            const box = document.getElementById("resultadoLstsq");
+            const residualBox = document.getElementById("residualBox");
+
+            if (!modelo) { box.innerHTML = '<span class="placeholder">⏳ Aguarde...</span>'; return; }
+
+            const itens       = parseFloat(document.getElementById("c_itens").value);
+            const tipo        = parseFloat(document.getElementById("c_tipo").value);
+            const cozinheiros = parseFloat(document.getElementById("c_cozinheiros").value);
+            const horario     = parseFloat(document.getElementById("c_horario").value);
+
+            if ([itens, tipo, cozinheiros, horario].some(isNaN)) {
+                box.innerHTML = '<span class="placeholder">⚠️ Preencha todos os campos</span>';
+                return;
+            }
+
+            const tempo =
+                modelo.lstsq_B0 +
+                modelo.lstsq_B1_itens       * itens +
+                modelo.lstsq_B2_tipo        * tipo +
+                modelo.lstsq_B3_cozinheiros * cozinheiros +
+                modelo.lstsq_B4_horario     * horario;
+
+            box.className = "result-box has-result-pink";
+            box.innerText = "⏱️ " + tempo.toFixed(2) + " minutos";
+
+            // Exibe o erro quadrático do modelo
+            residualBox.style.display = "block";
+            residualBox.innerText = "📉 Erro quadrático total (residual): " + modelo.residuals;
+        }
+
+        carregarModelo();
+    </script>
+</body>
+</html>
